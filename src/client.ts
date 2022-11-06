@@ -85,7 +85,8 @@ export class API<E> {
     // @ts-ignore
     DELETE <P extends PathsWith<E, "DELETE">> (path: P) { return this.call("DELETE", path) }
 
-	call <M extends keyof E[P], P extends keyof E> (method: M, url: P) { // @ts-ignore
+	call <M extends keyof E[P], P extends keyof E> (method: M, url: P) : APICall<In<E[P][M]>, Out<E[P][M]>, Params<E, P>>{
+        // @ts-ignore
 		return new APICall<In<E[P][M]>, Out<E[P][M]>, Params<E, P>>(this, this.patchURL(url as string), {
 			method: (method as string),
 			cache: "no-cache",

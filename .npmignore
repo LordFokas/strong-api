@@ -1,0 +1,7 @@
+/src
+
+*.js.map
+tsconfig.json
+
+*.log
+*.code-workspace

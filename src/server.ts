@@ -11,7 +11,7 @@ type HTTPD = express.Application;
 type Method = "get"|"put"|"patch"|"delete";
 
 export type Wrapper<D> = (promiser:() => Promise<D|void>) => void;
-export type Transformer<T> = { fromObject: (object) => T };
+export type Transformer<T> = { fromObject: (obj:object) => T };
 
 export class APIBuilder<E, D> {
 	private httpd:HTTPD;
