@@ -7,7 +7,7 @@ import {
 } from './common.js';
 
 type Request = express.Request;
-type HTTPD = express.Application;
+type HTTPD = express.IRouter;
 type Method = "get"|"put"|"patch"|"delete";
 
 export type Wrapper<D> = (promiser:() => Promise<D|void>) => void;
