@@ -3,7 +3,8 @@ import {
     type PathsWith,
     type Params,
     type Out,
-    type In
+    type In,
+	Endpoints
 } from './common.js';
 
 type Request = express.Request;
@@ -13,7 +14,7 @@ type Method = "get"|"put"|"patch"|"delete";
 export type Wrapper<D> = (promiser:() => Promise<D|void>) => void;
 export type Transformer<T> = { fromObject: (obj:object) => T };
 
-export class APIBuilder<E, D> {
+export class APIBuilder<E extends Endpoints, D> {
 	private httpd:HTTPD;
 	private wrap:Wrapper<D>;
 
@@ -22,33 +23,29 @@ export class APIBuilder<E, D> {
 		this.wrap = wrapper;
 	}
 
-	GET<P extends PathsWith<E, "GET">> // @ts-ignore
+	GET<P extends PathsWith<E, "GET">>
 	(url:P, handler:(params:Params<E, P>) => Promise<Out<E[P]["GET"]>>){
-        // @ts-ignore
 		return this.#PARAMS("GET", url, handler);
 	}
 
-    // @ts-ignore
-	PUT<P extends PathsWith<E, "PUT">, I = In<E[P]["PUT"]>> // @ts-ignore
+    
+	PUT<P extends PathsWith<E, "PUT">, I = In<E[P]["PUT"]>>
 	(url:P, handler:(payload:I) => Promise<Out<E[P]["PUT"]>>, transformer:Transformer<I>){
-        // @ts-ignore
 		return this.#PAYLOAD("PUT", url, transformer, handler);
 	}
 
-    // @ts-ignore
-	PATCH<P extends PathsWith<E, "PATCH">, I = In<E[P]["PATCH"]>> // @ts-ignore
+    
+	PATCH<P extends PathsWith<E, "PATCH">, I = In<E[P]["PATCH"]>>
 	(url:P, handler:(payload:I) => Promise<Out<E[P]["PATCH"]>>, transformer:Transformer<I>){
-        // @ts-ignore
 		return this.#PAYLOAD("PATCH", url, transformer, handler);
 	}
 
-	DELETE<P extends PathsWith<E, "DELETE">> // @ts-ignore
+	DELETE<P extends PathsWith<E, "DELETE">>
 	(url:P, handler:(params:Params<E, P>) => Promise<Out<E[P]["DELETE"]>>){
-        // @ts-ignore
 		return this.#PARAMS("DELETE", url, handler);
 	}
 
-	#PARAMS<M extends keyof E[P], P extends keyof E> // @ts-ignore
+	#PARAMS<M extends keyof E[P], P extends keyof E>
 	(method:M, url:P, handler:(input:Params<E, P>) => Promise<Out<E[P][M]>>){
 		this.httpd[(method as string).toLowerCase() as Method]((url as string).replace("@", ":uuid_"),
 			(req:Request & { params:Params<E, P> }) => this.wrap(
@@ -57,8 +54,8 @@ export class APIBuilder<E, D> {
 		)
 	}
 
-    // @ts-ignore
-	#PAYLOAD< M extends keyof E[P], P extends keyof E, I = In<E[P][M]>> // @ts-ignore
+    
+	#PAYLOAD< M extends keyof E[P], P extends keyof E, I = In<E[P][M]>>
 	(method:M, url:P, transformer:Transformer<I>, handler:(input:I) => Promise<Out<E[P][M]>>){
 		this.httpd[(method as string).toLowerCase() as Method](url as string,
 			(req:Request) => this.wrap(

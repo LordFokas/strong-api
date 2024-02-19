@@ -2,7 +2,8 @@ import {
     type PathsWith,
     type Params,
     type Out,
-    type In
+    type In,
+	type Endpoints,
 } from './common.js';
 
 type CB<T> = (r:T) => void;
@@ -72,21 +73,16 @@ class APICall<I, O, P>{
 	}
 }
 
-export class API<E> {
+export class API<E extends Endpoints> {
 	#headerSource: () => Record<string, string> = () => ({});
 
-    // @ts-ignore
 	GET    <P extends PathsWith<E, "GET">>    (path: P) { return this.call("GET",    path) }
-    // @ts-ignore
     PUT    <P extends PathsWith<E, "PUT">>    (path: P) { return this.call("PUT",    path) }
-    // @ts-ignore
     PATCH  <P extends PathsWith<E, "PATCH">>  (path: P) { return this.call("PATCH",  path) }
-    // @ts-ignore
     DELETE <P extends PathsWith<E, "DELETE">> (path: P) { return this.call("DELETE", path) }
 
 	call <M extends keyof E[P], P extends keyof E> (method: M, url: P) : APICall<In<E[P][M]>, Out<E[P][M]>, Params<E, P>>{
-        // @ts-ignore
-		return new APICall<In<E[P][M]>, Out<E[P][M]>, Params<E, P>>(this, url, {
+		return new APICall<In<E[P][M]>, Out<E[P][M]>, Params<E, P>>(this, (url as string), {
 			method: (method as string),
 			cache: "no-cache",
 			credentials: "same-origin",
