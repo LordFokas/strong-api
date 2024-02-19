@@ -73,8 +73,7 @@ class APICall<I, O, P>{
 }
 
 export class API<E> {
-	#address:string;
-	#sessionSource:() => string;
+	#headerSource: () => Record<string, string> = () => ({});
 
     // @ts-ignore
 	GET    <P extends PathsWith<E, "GET">>    (path: P) { return this.call("GET",    path) }
@@ -87,26 +86,21 @@ export class API<E> {
 
 	call <M extends keyof E[P], P extends keyof E> (method: M, url: P) : APICall<In<E[P][M]>, Out<E[P][M]>, Params<E, P>>{
         // @ts-ignore
-		return new APICall<In<E[P][M]>, Out<E[P][M]>, Params<E, P>>(this, this.patchURL(url as string), {
+		return new APICall<In<E[P][M]>, Out<E[P][M]>, Params<E, P>>(this, url, {
 			method: (method as string),
 			cache: "no-cache",
 			credentials: "same-origin",
-			headers: { "X-UUID": this.uuid(), "X-Session-ID": this.#sessionSource() }
+			headers: this.#headerSource()
 		});
-	}
-
-	uuid(){
-		const val = document.cookie.match("(^|;) ?uuid=([^;]*)(;|$)");
-		return val ? val[2] : "";
 	}
 
 	onFetchError(...$:any[]){
 		console.error(...$);
 	}
 
-	patchURL(url:string){ return url.replace("[api]", this.#address); }
-	setSessionSource(func:() => string){ this.#sessionSource = func; }
-	setAddress(addr:string){ this.#address = addr; }
+	setHeaderSource(source: () => Record<string, string>){
+		this.#headerSource = source;
+	}
 }
 
 type ClassMap = { [key:string] : typeof FXO };

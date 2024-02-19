@@ -1,7 +1,7 @@
 {
   "name": "@lordfokas/strong-api",
   "type": "module",
-  "version": "1.1.1",
+  "version": "2.0.0",
   "description": "A shared (FE+BE) REST API typing mechanism",
   "main": "dist/common.js",
   "exports": {
@@ -11,7 +11,9 @@
     "./server": "./dist/server.js"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prebuild": "rm -rf dist",
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "typescript",
