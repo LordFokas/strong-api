@@ -27,13 +27,11 @@ export class APIBuilder<E extends Endpoints, D> {
 	(url:P, handler:(params:Params<E, P>) => Promise<Out<E[P]["GET"]>>){
 		return this.#PARAMS("GET", url, handler);
 	}
-
     
 	PUT<P extends PathsWith<E, "PUT">, I = In<E[P]["PUT"]>>
 	(url:P, handler:(payload:I) => Promise<Out<E[P]["PUT"]>>, transformer:Transformer<I>){
 		return this.#PAYLOAD("PUT", url, transformer, handler);
 	}
-
     
 	PATCH<P extends PathsWith<E, "PATCH">, I = In<E[P]["PATCH"]>>
 	(url:P, handler:(payload:I) => Promise<Out<E[P]["PATCH"]>>, transformer:Transformer<I>){
@@ -53,7 +51,6 @@ export class APIBuilder<E extends Endpoints, D> {
 			)
 		)
 	}
-
     
 	#PAYLOAD< M extends keyof E[P], P extends keyof E, I = In<E[P][M]>>
 	(method:M, url:P, transformer:Transformer<I>, handler:(input:I) => Promise<Out<E[P][M]>>){

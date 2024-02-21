@@ -1,11 +1,11 @@
 {
   "name": "@lordfokas/strong-api",
   "type": "module",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "A shared (FE+BE) REST API typing mechanism",
   "main": "dist/common.js",
   "exports": {
-    ".":        "./dist/common.js",
+    ".": "./dist/common.js",
     "./common": "./dist/common.js",
     "./client": "./dist/client.js",
     "./server": "./dist/server.js"
@@ -27,6 +27,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/express": "^4.17.14",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "typescript": "^5.3.3"
   }
 }

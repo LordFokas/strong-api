@@ -6,25 +6,18 @@ import {
 	type Endpoints,
 } from './common.js';
 
-type CB<T> = (r:T) => void;
-
 class APICall<I, O, P>{
-	#api:API<any>;
+	#api:APIClient<any>;
 	#url:string;
 	#options:RequestInit;
-	#then:CB<O>;  // http success
-	#error:CB<any>; // http error
 	#params:P;
 	#payload:I;
 
-	constructor(api:API<any>, url:string, options:RequestInit){
+	constructor(api:APIClient<any>, url:string, options:RequestInit){
 		this.#api = api;
 		this.#url = url;
 		this.#options = options;
 	}
-	
-	error(cb:CB<any>){ this.#error = cb; return this; }
-	then(cb:CB<O>){ this.#then = cb; return this; }
 
 	params(params:P){
 		this.#params = params;
@@ -36,7 +29,8 @@ class APICall<I, O, P>{
 		return this;
 	}
 
-	execute(){
+	async execute() : Promise<O>{
+		// Build final URL with path parameters
 		if(this.#params){
 			let url = this.#url;
 			for(const name in this.#params){
@@ -49,31 +43,51 @@ class APICall<I, O, P>{
 			this.#url = url;
 		}
 
+		// Serialize Payload
 		if(this.#payload){
 			(this.#options.headers as Record<string, string>)["Content-Type"] = "application/json";
 			this.#options.body = JSON.stringify(this.#payload, FXO.serializer);
 		}
 		
-		fetch(this.#url, this.#options)
-		.then(async res => {
-			if(res.headers.get('X-API-Maintenance') == 'true'){
-                window.location.reload();
-            }else{
-                const json = await res.text();
-                let object = undefined;
-                if(json) object = JSON.parse(json, FXO.reviver);
-                if(res.ok){
-                    this.#then != undefined && this.#then(object as O);
-                }else{
-                    this.#error != undefined && this.#error(object);
-                }
-            }
-		})
-		.catch(this.#api.onFetchError);
+		// Execute HTTP Endpoint Call
+		let res, body;
+		try{
+			res = await fetch(this.#url, this.#options);
+			body = await res.text();
+		}catch(error){
+			this.#api.onFetchError(error);
+			throw new Error("Request Failed");
+		}
+
+		// Throw request error
+		if(!res.ok){
+			throw new APIError(this.#url, res.status, res.statusText, body);
+		}
+		
+		// Return deserialized results
+		return body ? JSON.parse(body, FXO.reviver) : undefined;
 	}
 }
 
-export class API<E extends Endpoints> {
+export class APIError extends Error {
+	readonly route: string;
+	readonly status: number;
+	readonly title: string;
+	readonly body: string;
+	readonly object: {};
+	
+	constructor(route: string, status: number, title: string, body: string){
+		super("API Request Failed");
+		this.route = route;
+		this.status = status;
+		this.title = title;
+		this.body = body;
+		try { this.object = JSON.parse(body); }
+		catch {}
+	}
+}
+
+export class APIClient<E extends Endpoints> {
 	#headerSource: () => Record<string, string> = () => ({});
 
 	GET    <P extends PathsWith<E, "GET">>    (path: P) { return this.call("GET",    path) }
