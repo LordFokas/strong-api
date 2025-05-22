@@ -115,15 +115,23 @@ export class APIClient<E extends Endpoints> {
 
 type ClassMap = { [key:string] : typeof FXO };
 
+interface Type { ['@type']?:string; };
+type Typed<F> = Type & F;
+
+export interface FXO<T> extends Type {}
 export class FXO<T> {
     static #classMap:ClassMap = {};
-	['@type']?:string;
-
+	static #reverse:Record<string, string>;
+	
     static useClassMap(map:ClassMap){
         FXO.#classMap = map;
+		FXO.#reverse = {};
+		for(const [name, fxo] of Object.entries(map)) {
+			FXO.#reverse[fxo.name] = name;
+		}
     }
 
-	static reviver(k:string, obj:FXO<any>){
+	static reviver(k:string, obj:Typed<any>){
 		if(obj instanceof Object && obj['@type']){
 			const model = FXO.#classMap[obj['@type']];
 			return new model(obj);
@@ -140,10 +148,11 @@ export class FXO<T> {
 		}
 	}
 
-	constructor(data:FXO<T>, assignType = false){
+	constructor(data:Partial<T>, assignType = false){
 		Object.assign(this, data);
-		if(assignType && (data instanceof FXO)){
-			this['@type'] = data.constructor.name;
+		if(assignType){
+			const fxo:FXO<T> = data instanceof FXO ? data : this;
+			this['@type'] = FXO.#reverse[fxo.constructor.name];
 		}else{
 			delete this['@type'];
 		}
