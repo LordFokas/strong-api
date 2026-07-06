@@ -11,6 +11,7 @@ class APICall<I, O, P>{
 	#url:string;
 	#options:RequestInit;
 	#params:P;
+	#query:Record<string, string> = null;
 	#payload:I;
 
 	constructor(api:APIClient<any>, url:string, options:RequestInit){
@@ -21,6 +22,12 @@ class APICall<I, O, P>{
 
 	params(params:P){
 		this.#params = params;
+		return this;
+	}
+
+	query(query:Record<string, string>){
+		if(!this.#query) this.#query = {};
+		Object.assign(this.#query, query);
 		return this;
 	}
 
@@ -41,6 +48,9 @@ class APICall<I, O, P>{
 				}
 			}
 			this.#url = url;
+		}
+		if(this.#query) {
+			this.#url += "?" + Object.entries(this.#query).map((k, v) => k+"="+v).join("&");
 		}
 
 		// Serialize Payload
