@@ -89,14 +89,19 @@ export class APIError extends Error {
 
 export class APIClient<E extends Endpoints> {
 	#headerSource: () => Record<string, string> = () => ({});
+	#baseURL: string;
 
 	GET    <P extends PathsWith<E, "GET">>    (path: P) { return this.call("GET",    path) }
     PUT    <P extends PathsWith<E, "PUT">>    (path: P) { return this.call("PUT",    path) }
     PATCH  <P extends PathsWith<E, "PATCH">>  (path: P) { return this.call("PATCH",  path) }
     DELETE <P extends PathsWith<E, "DELETE">> (path: P) { return this.call("DELETE", path) }
 
+	constructor(baseUrl: string = "") {
+		this.#baseURL = baseUrl;
+	}
+
 	call <M extends keyof E[P], P extends keyof E> (method: M, url: P) : APICall<In<E[P][M]>, Out<E[P][M]>, Params<E, P>>{
-		return new APICall<In<E[P][M]>, Out<E[P][M]>, Params<E, P>>(this, (url as string), {
+		return new APICall<In<E[P][M]>, Out<E[P][M]>, Params<E, P>>(this, this.#baseURL + (url as string), {
 			method: (method as string),
 			cache: "no-cache",
 			credentials: "same-origin",

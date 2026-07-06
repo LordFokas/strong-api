@@ -11,6 +11,11 @@ export type PathsWith<E extends Endpoints, T extends string> = {
     [P in keyof E]: T extends keyof E[P] ? P : never;
 }[keyof E];
 
+export type Mount<P extends string, E extends Endpoints> = {
+    // @ts-ignore
+    [K in keyof E as `${P}${K}`]: E[K];
+}
+
 export interface IO<I, O> { }
 export type In<T extends IO<any, any>> = T extends IO<infer I, any> ? I : never;
 export type Out<T extends IO<any, any>> = T extends IO<any, infer O> ? O : never;
