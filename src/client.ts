@@ -50,7 +50,7 @@ class APICall<I, O, P>{
 			this.#url = url;
 		}
 		if(this.#query) {
-			this.#url += "?" + Object.entries(this.#query).map((k, v) => k+"="+v).join("&");
+			this.#url += "?" + Object.entries(this.#query).map(e => e[0]+"="+e[1]).join("&");
 		}
 
 		// Serialize Payload
