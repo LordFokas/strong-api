@@ -4,16 +4,80 @@ import {
     type Out,
     type In,
 	type Endpoints,
-	type Value,
-	type KV,
+	type EK,
 } from './common.js';
 
+/**
+ * Client that makes strongly type checked calls against a Endpoints-defined API.
+ * @param E Endpoints definition
+ * @param R Optional NS-UUID union resolution map
+ */
+export class APIClient<E extends Endpoints, R extends EK = {}> {
+	#headerSource: (method:string, url:string) => Record<string, string> = () => ({});
+	#optionsSource: (method:string, url:string) => Record<string, string> = () => ({
+		cache: "no-cache",
+		credentials: "same-origin",
+	});
+	#baseURL: string;
+
+	/**
+	 * @param baseUrl define a prefix for the API calls.
+	 * Usually the API protocol, domain, and port.
+	 * Further path segments may interfere with Endpoints
+	 */
+	constructor(baseUrl: string = "") {
+		this.#baseURL = baseUrl;
+	}
+
+	/** Prepare a GET request. @returns an APICall object */
+	GET    <P extends PathsWith<E, "GET">>    (path: P) { return this.call("GET",    path) }
+
+	/** Prepare a PUT request. @returns an APICall object */
+    PUT    <P extends PathsWith<E, "PUT">>    (path: P) { return this.call("PUT",    path) }
+
+	/** Prepare a PATCH request. @returns an APICall object */
+    PATCH  <P extends PathsWith<E, "PATCH">>  (path: P) { return this.call("PATCH",  path) }
+
+	/** Prepare a DELETE request. @returns an APICall object */
+    DELETE <P extends PathsWith<E, "DELETE">> (path: P) { return this.call("DELETE", path) }
+
+	private call <M extends keyof E[P], P extends keyof E> (method: M, url: P) : APICall<In<E[P][M]>, Out<E[P][M]>, Params<E, P, R>>{
+		return new APICall<In<E[P][M]>, Out<E[P][M]>, Params<E, P, R>>(this, this.#baseURL + (url as string), {
+			...this.#optionsSource(method as any, url as any),
+			method: (method as string),
+			headers: this.#headerSource(method as any, url as any)
+		});
+	}
+
+	onFetchError(...$:any[]){
+		console.error(...$);
+	}
+
+	/** Set a source method called on every API call that returns headers to add to the request */
+	setHeaderSource(source: (method:string, url:string) => Record<string, string>){
+		this.#headerSource = source;
+	}
+
+	/** Set a source method called on every API call that returns a fetch options map to attach to the fetch call */
+	setOptionsSource(source: (method:string, url:string) => Record<string, string>) {
+		this.#optionsSource = source;
+	}
+}
+
+type Value = string | number | boolean;
+
+/**
+ * API call configuration and execution object.
+ * @param I the type of the input payload
+ * @param O the type of the output payload
+ * @param P structure of the required URL parameters
+ */
 class APICall<I, O, P>{
 	#api:APIClient<any, any>;
 	#url:string;
 	#options:RequestInit;
 	#params:P;
-	#query:Record<string, string> = null;
+	#query:Record<string, Value> = null;
 	#payload:I;
 
 	constructor(api:APIClient<any, any>, url:string, options:RequestInit){
@@ -22,31 +86,55 @@ class APICall<I, O, P>{
 		this.#options = options;
 	}
 
+	/**
+	 * Define values to replace the URL params, must be called all at once
+	 * @param params param map as parsed from the URL
+	 * @returns this
+	 */
 	params(params:P){
 		this.#params = params;
 		return this;
 	}
 
+	/**
+	 * Add query parameters. Can be called multiple times, additive
+	 * @param query map of query parameters to add to the request
+	 * @returns this
+	 */
 	query(query:Record<string, Value>){
 		if(!this.#query) this.#query = {};
 		Object.assign(this.#query, query);
 		return this;
 	}
 
+	/**
+	 * Add the request input payload, as defined per the respective `IO<I, any>` in Endpoints
+	 * @param payload input payload object
+	 * @returns this
+	 */
 	payload(payload:I){
 		this.#payload = payload;
 		return this;
 	}
 
+	/**
+	 * Executes the request as configured per this object and returns the response, if any
+	 * @returns the output payload, as defined per the respective `IO<any, O>` in Endpoints
+	 */
 	async execute() : Promise<O>{
-		// Build final URL with path parameters
+		// Build final URL with path parameters and query strring
 		if(this.#params){
 			let url = this.#url;
-			for(const name in this.#params){
-				if(name.startsWith("uuid_")){
-					url = url.replace("@"+name.replace("uuid_", ""), this.#params[name] as any); // FIXME: param replace not consistent
+			for(const key in this.#params){
+				if(key.startsWith("uuid_")){
+					const name = key.replace("uuid_", "");
+					if(name.match(/^[A-Z]+$/)) {
+						url = url.replace("@"+name, this.#params[key] as any); // @NS
+					} else {
+						url = url.replace(new RegExp(`@[A-Z]+\+${name}`), this.#params[key] as any); // @NS+name
+					}
 				}else{
-					url = url.replace(":"+name, this.#params[name] as any);
+					url = url.replace(":"+key, this.#params[key] as any); // :id
 				}
 			}
 			this.#url = url;
@@ -99,39 +187,7 @@ export class APIError extends Error {
 	}
 }
 
-export class APIClient<E extends Endpoints, R extends KV> {
-	#headerSource: () => Record<string, string> = () => ({});
-	#baseURL: string;
-
-	GET    <P extends PathsWith<E, "GET">>    (path: P) { return this.call("GET",    path) }
-    PUT    <P extends PathsWith<E, "PUT">>    (path: P) { return this.call("PUT",    path) }
-    PATCH  <P extends PathsWith<E, "PATCH">>  (path: P) { return this.call("PATCH",  path) }
-    DELETE <P extends PathsWith<E, "DELETE">> (path: P) { return this.call("DELETE", path) }
-
-	constructor(baseUrl: string = "") {
-		this.#baseURL = baseUrl;
-	}
-
-	private call <M extends keyof E[P], P extends keyof E> (method: M, url: P) : APICall<In<E[P][M]>, Out<E[P][M]>, Params<E, P, R>>{
-		return new APICall<In<E[P][M]>, Out<E[P][M]>, Params<E, P, R>>(this, this.#baseURL + (url as string), {
-			method: (method as string),
-			cache: "no-cache",
-			credentials: "same-origin",
-			headers: this.#headerSource()
-		});
-	}
-
-	onFetchError(...$:any[]){
-		console.error(...$);
-	}
-
-	setHeaderSource(source: () => Record<string, string>){
-		this.#headerSource = source;
-	}
-}
-
 type ClassMap = { [key:string] : typeof FXO };
-
 interface Type { ['@type']?:string; };
 type Typed<F> = Type & F;
 
@@ -175,6 +231,7 @@ export class FXO<T> {
 		}
 	}
 
+	/** Create a clone with the specified fields deleted */
 	except?(...fields : (keyof this)[]) : this {
 		const clone = new (Object.getPrototypeOf(this).constructor)(this);
 		for(const field of fields){
@@ -183,6 +240,7 @@ export class FXO<T> {
 		return clone;
 	}
 
+	/** Create a clone with only the specified fields */
 	only?(...fields : (keyof this)[]) : this {
 		const clone = new (Object.getPrototypeOf(this).constructor)({});
 		for(const field of fields){
