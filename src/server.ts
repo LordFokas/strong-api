@@ -65,7 +65,7 @@ export class APIBuilder<E extends Endpoints, D, M extends EK = {}> {
 	/** Handles methods with no input payload (GET, DELETE) */
 	#PARAMS<M extends keyof E[P], P extends keyof E, R extends EK>
 	(method:M, url:P, handler:(input:Params<E, P, R>) => Promise<Out<E[P][M]>>){
-		this.httpd[(method as string).toLowerCase() as Method]((url as string).replace("@", ":uuid_"),
+		this.httpd[(method as string).toLowerCase() as Method]((url as string).replaceAll(/@[A-Z]+\+/, ":uuid_").replaceAll(/@/, ":uuid_"),
 			(req:Request & { params:Params<E, P, R> }) => this.wrap(
 				() => handler(req.params) as Promise<D|void>
 			)
