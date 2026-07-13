@@ -4,17 +4,19 @@ import {
     type Out,
     type In,
 	type Endpoints,
+	type Value,
+	type KV,
 } from './common.js';
 
 class APICall<I, O, P>{
-	#api:APIClient<any>;
+	#api:APIClient<any, any>;
 	#url:string;
 	#options:RequestInit;
 	#params:P;
 	#query:Record<string, string> = null;
 	#payload:I;
 
-	constructor(api:APIClient<any>, url:string, options:RequestInit){
+	constructor(api:APIClient<any, any>, url:string, options:RequestInit){
 		this.#api = api;
 		this.#url = url;
 		this.#options = options;
@@ -25,7 +27,7 @@ class APICall<I, O, P>{
 		return this;
 	}
 
-	query(query:Record<string, string>){
+	query(query:Record<string, Value>){
 		if(!this.#query) this.#query = {};
 		Object.assign(this.#query, query);
 		return this;
@@ -42,7 +44,7 @@ class APICall<I, O, P>{
 			let url = this.#url;
 			for(const name in this.#params){
 				if(name.startsWith("uuid_")){
-					url = url.replace("@"+name.replace("uuid_", ""), this.#params[name] as any);
+					url = url.replace("@"+name.replace("uuid_", ""), this.#params[name] as any); // FIXME: param replace not consistent
 				}else{
 					url = url.replace(":"+name, this.#params[name] as any);
 				}
@@ -97,7 +99,7 @@ export class APIError extends Error {
 	}
 }
 
-export class APIClient<E extends Endpoints> {
+export class APIClient<E extends Endpoints, R extends KV> {
 	#headerSource: () => Record<string, string> = () => ({});
 	#baseURL: string;
 
@@ -110,8 +112,8 @@ export class APIClient<E extends Endpoints> {
 		this.#baseURL = baseUrl;
 	}
 
-	call <M extends keyof E[P], P extends keyof E> (method: M, url: P) : APICall<In<E[P][M]>, Out<E[P][M]>, Params<E, P>>{
-		return new APICall<In<E[P][M]>, Out<E[P][M]>, Params<E, P>>(this, this.#baseURL + (url as string), {
+	private call <M extends keyof E[P], P extends keyof E> (method: M, url: P) : APICall<In<E[P][M]>, Out<E[P][M]>, Params<E, P, R>>{
+		return new APICall<In<E[P][M]>, Out<E[P][M]>, Params<E, P, R>>(this, this.#baseURL + (url as string), {
 			method: (method as string),
 			cache: "no-cache",
 			credentials: "same-origin",
