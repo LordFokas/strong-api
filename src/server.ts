@@ -16,7 +16,7 @@ type Method = "get"|"put"|"patch"|"delete";
 export type Wrapper<D> = (promiser:() => Promise<D|void>) => void;
 
 /** Object that is able to hydrate JSON input into the native class instances */
-export type Transformer<T> = { fromObject: (obj:object) => T };
+export type Transformer<T> = (obj:object) => T;
 
 /**
  * Wrapper utility that constructs endpoint handling infrastructure automatically,
@@ -77,10 +77,7 @@ export class APIBuilder<E extends Endpoints, D, M extends EK = {}> {
 	(method:M, url:P, transformer:Transformer<I>, handler:(input:I, params:Params<E, P, R>) => Promise<Out<E[P][M]>>){
 		this.httpd[(method as string).toLowerCase() as Method](url as string,
 			(req:Request) => this.wrap(
-				() => handler(
-					transformer.fromObject(req.body),
-					req.params as Params<E, P, R>
-				) as Promise<D|void>
+				() => handler(transformer(req.body), req.params as Params<E, P, R>) as Promise<D|void>
 			)
 		)
 	}

@@ -1,14 +1,22 @@
 {
   "name": "@lordfokas/strong-api",
   "type": "module",
-  "version": "3.3.1",
+  "version": "4.0.0-alpha.0",
   "description": "A shared (FE+BE) REST API typing mechanism",
   "main": "dist/common.js",
   "exports": {
-    ".": "./dist/common.js",
-    "./common": "./dist/common.js",
-    "./client": "./dist/client.js",
-    "./server": "./dist/server.js"
+    ".": {
+      "types": "./dist/common.d.ts",
+      "import": "./dist/common.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js"
+    }
   },
   "scripts": {
     "prebuild": "rm -rf dist",
@@ -26,8 +34,8 @@
   "author": "LordFokas",
   "license": "MIT",
   "devDependencies": {
-    "@types/express": "^4.17.14",
-    "express": "^4.18.2",
-    "typescript": "^5.3.3"
+    "@types/express": "^5.0.6",
+    "express": "^5.2.1",
+    "typescript": "^7.0.2"
   }
 }

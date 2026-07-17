@@ -1,17 +1,21 @@
 {
-  "compilerOptions": {
-  "esModuleInterop": true,
-  "outDir": "dist/",
-  "declaration": true,
-  "moduleResolution": "node",
-  "module": "ES2020",
-  "target": "ESNext",
-  "useDefineForClassFields": true,
+	"compilerOptions": {
+		"esModuleInterop": true,
+		"rootDir": "./src",
+		"outDir": "./dist",
+		"declaration": true,
 
-  "noImplicitAny": true
-  },
-  "files": [
-      "src/client.ts",
-      "src/server.ts"
-  ]
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
+		"target": "es2022",
+		"lib": ["ES2022", "DOM"],
+
+		"useDefineForClassFields": true,
+		"noImplicitAny": true,
+		"skipLibCheck": true,
+	},
+	"files": [
+		"src/client.ts",
+		"src/server.ts"
+	]
 }

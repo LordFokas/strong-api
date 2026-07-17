@@ -14,10 +14,10 @@ export type Endpoints = Record<string, {
 export interface IO<I, O> { }
 
 /** Resolves to type `I` from the given `IO<I, any>` */
-export type In<T extends IO<any, any>> = T extends IO<infer I, any> ? I : never;
+export type In<T extends unknown> = T extends IO<infer I, any> ? I : never;
 
 /** Resolves to type `O` from the given `IO<any, O>` */
-export type Out<T extends IO<any, any>> = T extends IO<any, infer O> ? O : never;
+export type Out<T extends unknown> = T extends IO<any, infer O> ? O : never;
 
 /**
  * Resolves the list of available paths in the API given an HTTP method
@@ -47,13 +47,13 @@ export type UUID<K extends string> = `${K}::${string}`;
 /** NS-UUID resolver. Provides EK[NS] if found, defaulting to NS otherwise */
 type Resolve<N extends string, R extends EK> = N extends keyof R ? R[N] : N;
 
-/** Collapses joined types into a single type */
-type Collapse<T> = T extends string | number | undefined | void ? T : { [P in keyof T]: T[P] };
+/** Flattens intersection types into a single readable type */
+type Flatten<T> = T extends string | number | undefined | void ? T : { [P in keyof T]: T[P] };
 
 /** Recursive resolver that produces params type map for a given URL if any, or never otherwise */
 export type Params<E extends Endpoints, T extends keyof E, R extends EK>
 = T extends `${string}@${string}`|`${string}:${string}`
-? Collapse<ParseUUID<T, R> & ParseString<T>>
+? Flatten<ParseUUID<T, R> & ParseString<T>>
 : never;
 
 /** Recursive resolver that produces a map of string params for a given url (`:id` format) */

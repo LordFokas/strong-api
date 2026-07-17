@@ -76,9 +76,9 @@ class APICall<I, O, P>{
 	#api:APIClient<any, any>;
 	#url:string;
 	#options:RequestInit;
-	#params:P;
-	#query:Record<string, Value> = null;
-	#payload:I;
+	#params?:P;
+	#query?:Record<string, Value>;
+	#payload?:I;
 
 	constructor(api:APIClient<any, any>, url:string, options:RequestInit){
 		this.#api = api;
@@ -165,7 +165,7 @@ class APICall<I, O, P>{
 		}
 		
 		// Return deserialized results
-		return body ? JSON.parse(body, FXO.reviver) : undefined;
+		return body ? JSON.parse(body, FXO.reviver) : undefined as any;
 	}
 }
 
@@ -174,7 +174,7 @@ export class APIError extends Error {
 	readonly status: number;
 	readonly title: string;
 	readonly body: string;
-	readonly object: {};
+	readonly object?: {};
 	
 	constructor(route: string, status: number, title: string, body: string){
 		super("API Request Failed");
@@ -183,7 +183,7 @@ export class APIError extends Error {
 		this.title = title;
 		this.body = body;
 		try { this.object = JSON.parse(body); }
-		catch {}
+		catch { }
 	}
 }
 
